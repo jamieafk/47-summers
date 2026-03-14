@@ -1,2 +1,16 @@
 CLAUDE.md
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Claude Code / Superpowers
+.claude/
+.superpowers/
+
+# Playwright
+.playwright-mcp/
+
+# Editor
+.vscode/
+.idea/

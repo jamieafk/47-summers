@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fling — 47 Summers</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='black'/><text x='50%25' y='78%25' text-anchor='middle' font-size='26' font-family='Arial,sans-serif' font-weight='bold' fill='white'>47</text></svg>">
+</head>
+<body>
+<div class="wrap">
+
+<a class="backlink" href="index.html">&larr; Back to 47 Summers</a>
+
+<div class="box box--invert">
+<pre class="ascii">
+███████╗██╗     ██╗███╗   ██╗ ██████╗
+██╔════╝██║     ██║████╗  ██║██╔════╝
+█████╗  ██║     ██║██╔██╗ ██║██║  ███╗
+██╔══╝  ██║     ██║██║╚██╗██║██║   ██║
+██║     ███████╗██║██║ ╚████║╚██████╔╝
+╚═╝     ╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝
+</pre>
+</div>
+
+<div class="box">
+<h1>Fling</h1>
+<hr class="rule">
+<p>Quick capture for iPhone. Type or dictate a note, swipe up, and Fling saves it as plain Markdown to iCloud Drive, a Files folder, or an automation webhook.</p>
+</div>
+
+<details id="support" open>
+<summary><h2>Support</h2></summary>
+<div class="details-body">
+<p>Need help with Fling? Email <a href="mailto:sober@duck.com">sober@duck.com</a> with your device model, iOS version, and what you were trying to do.</p>
+
+<div class="note-yellow">
+<h3>Common Questions</h3>
+<div class="qa">
+<h4>Where do my notes save?</h4>
+<p>By default, Fling saves notes to iCloud Drive. You can also choose any Files-compatible folder in Settings.</p>
+</div>
+<div class="qa">
+<h4>What happens if my destination is unavailable?</h4>
+<p>Fling tries to save the note locally in the Files app container so your note is not lost.</p>
+</div>
+<div class="qa">
+<h4>Do I need an account?</h4>
+<p>No. Fling does not have accounts, ads, analytics, or tracking.</p>
+</div>
+<div class="qa">
+<h4>How do I use webhook delivery?</h4>
+<p>Open Settings, tap Connect Webhook, and paste a Fling connection link. Fling previews the destination and verifies the link before saving it.</p>
+</div>
+</div>
+</div>
+</details>
+
+<details id="webhooks" open>
+<summary><h2>Webhooks</h2></summary>
+<div class="details-body">
+<p>Use a Fling connection link with a secret token and a short destination name.</p>
+
+<pre class="code-block"><code>https://your-domain.example/fling-webhook?token=YOUR_SECRET_TOKEN&amp;slug=personal_notes</code></pre>
+
+<p>Treat the full link as a secret. Fling removes <code>token</code>, <code>slug</code>, and <code>project_slug</code> before saving the endpoint URL, stores the token in the iOS Keychain, and keeps any other query parameters your endpoint needs.</p>
+
+<ul>
+<li>Remote servers must use HTTPS.</li>
+<li>Local development endpoints can use localhost, 127.0.0.1, or .local local-network hosts.</li>
+<li>Fling verifies with a HEAD request using <code>Authorization: Bearer YOUR_SECRET_TOKEN</code> and <code>X-Fling-Project: personal_notes</code>.</li>
+<li>A 2xx response passes. A 405 response also passes, because many simple servers only implement POST.</li>
+</ul>
+
+<p>When you swipe a note to a webhook, Fling sends JSON:</p>
+
+<pre class="code-block"><code>{
+  "project_slug": "personal_notes",
+  "title": "First line of the note",
+  "description": "Everything after the first line"
+}</code></pre>
+
+<p>For a one-line note, <code>description</code> is omitted. If a webhook send fails, Fling saves the note to the Files app fallback.</p>
+
+<pre class="code-block"><code>app.head("/fling-webhook", (req, res) =&gt; {
+  if (req.get("authorization") !== `Bearer ${process.env.FLING_TOKEN}`) {
+    return res.sendStatus(401);
+  }
+  res.sendStatus(204);
+});
+
+app.post("/fling-webhook", express.json(), (req, res) =&gt; {
+  if (req.get("authorization") !== `Bearer ${process.env.FLING_TOKEN}`) {
+    return res.sendStatus(401);
+  }
+
+  console.log(req.body.project_slug, req.body.title, req.body.description);
+  res.sendStatus(204);
+});</code></pre>
+</div>
+</details>
+
+<details id="privacy">
+<summary><h2>Privacy Policy</h2></summary>
+<div class="details-body">
+<p>Last updated: June 12, 2026</p>
+
+<p>This privacy policy describes how 47 Summers LLC ("we", "us") handles information in connection with Fling.</p>
+
+<h3>Summary</h3>
+<div class="note-yellow">
+<p>Fling is a quick-capture app for saving notes as plain Markdown files. Fling does not require an account, does not include ads, and does not include analytics or tracking SDKs.</p>
+</div>
+
+<h3>What Fling Stores</h3>
+<ul>
+<li><b>App settings:</b> Fling stores preferences on your device, such as sound, haptics, text size, selected destination, and clear-gesture settings.</li>
+<li><b>Folder access:</b> If you choose a custom folder, Fling stores a security-scoped folder bookmark so it can keep saving notes to that folder.</li>
+<li><b>Webhook connection:</b> If you connect a webhook, Fling stores the secret token in the iOS Keychain and stores non-secret connection details, such as the destination name and URL, in app settings.</li>
+<li><b>Draft text:</b> If you leave an unfinished note, Fling may store that draft locally so it can be restored when you reopen the app.</li>
+</ul>
+
+<h3>Notes And Destinations</h3>
+<p>By default, Fling saves notes to the app's iCloud Drive folder. iCloud syncing is handled by Apple and your Apple ID settings.</p>
+<p>If you choose a folder through the Files picker, Fling saves notes to that folder. That folder may be local to your device or provided by another app or cloud storage service.</p>
+<div class="note-invert">
+If you connect a webhook, Fling sends note content to the webhook URL you configured. The destination service may process or store that content according to its own policies. Fling does not operate the webhook destination unless you host it yourself.
+</div>
+<p>If a configured destination is unavailable, Fling tries to save the note locally in the Files app container so the note is not lost.</p>
+
+<h3>Microphone And Speech Recognition</h3>
+<p>Fling asks for microphone and speech recognition permission only if you use voice dictation. Dictation is handled through Apple's system speech-recognition services. Fling does not record, sell, or use your voice for advertising.</p>
+
+<h3>Local Network</h3>
+<p>Fling asks for local network permission only if you connect a local webhook endpoint, such as a development server on your own network.</p>
+
+<h3>What Fling Does Not Do</h3>
+<ul>
+<li>require an account</li>
+<li>collect analytics</li>
+<li>show ads</li>
+<li>track you across apps or websites</li>
+<li>sell personal data</li>
+<li>upload your notes to a Fling-owned server</li>
+</ul>
+
+<h3>Deleting Your Data</h3>
+<p>You can delete saved notes from the folder where they were saved, including iCloud Drive, a custom folder, or the local Files app container.</p>
+<p>You can disconnect a webhook in Settings. You can remove local Fling data by deleting the app from your device. Notes that were already saved to iCloud Drive or another folder may remain in those locations until you delete them there.</p>
+
+<h3>Contact</h3>
+<p>Questions about this policy? Email <a href="mailto:sober@duck.com">sober@duck.com</a>.</p>
+</div>
+</details>
+
+<footer>
+<div>&copy; 2026 47 Summers LLC</div>
+<a href="index.html">Back to portfolio</a>
+</footer>
+
+</div>
+</body>
+</html>

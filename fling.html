@@ -75,12 +75,19 @@
 <p>When you swipe a note to a webhook, Fling sends JSON:</p>
 
 <pre class="code-block"><code>{
+  "schema_version": "1.1",
   "project_slug": "personal_notes",
+  "id": "11111111-2222-3333-4444-555555555555",
+  "created_at": "2026-06-12T08:15:30Z",
+  "timezone": "America/New_York",
   "title": "First line of the note",
-  "description": "Everything after the first line"
+  "description": "Everything after the first line",
+  "text": "First line of the note\nEverything after the first line",
+  "format": "markdown",
+  "input_method": "typed"
 }</code></pre>
 
-<p>For a one-line note, <code>description</code> is omitted. If a webhook send fails, Fling saves the note to the Files app fallback.</p>
+<p>For a one-line note, <code>description</code> is omitted. <code>input_method</code> is <code>typed</code>, <code>voice</code>, or <code>mixed</code> for the current capture session. Restored older drafts default to <code>typed</code> because draft files do not store input provenance. If a webhook send fails, Fling saves the note to the Files app fallback.</p>
 
 <pre class="code-block"><code>app.head("/fling-webhook", (req, res) =&gt; {
   if (req.get("authorization") !== `Bearer ${process.env.FLING_TOKEN}`) {
@@ -94,7 +101,7 @@ app.post("/fling-webhook", express.json(), (req, res) =&gt; {
     return res.sendStatus(401);
   }
 
-  console.log(req.body.project_slug, req.body.title, req.body.description);
+  console.log(req.body.project_slug, req.body.input_method, req.body.title);
   res.sendStatus(204);
 });</code></pre>
 </div>

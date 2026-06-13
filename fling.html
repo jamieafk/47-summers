@@ -50,7 +50,7 @@
 </div>
 <div class="qa">
 <h4>How do I use webhook delivery?</h4>
-<p>Open Settings, tap Connect Webhook, then paste a Discord webhook URL or a Fling connection link from your automation tool. Fling previews the destination and verifies the link before saving it.</p>
+<p>Open Settings, tap Connect Webhook, then paste a Discord webhook URL or a Fling connection link from your automation bridge or receiver. Fling previews the destination and verifies the link before saving it.</p>
 </div>
 </div>
 </div>
@@ -59,7 +59,7 @@
 <details id="webhooks" open>
 <summary><h2>Webhooks</h2></summary>
 <div class="details-body">
-<p>Fling supports two setup styles: paste a Discord webhook URL directly, or use a Fling connection link for Make, Zapier, n8n, Cloudflare Workers, and custom receivers.</p>
+<p>Fling supports two setup styles: paste a Discord webhook URL directly, or use a Fling connection link for automation bridges, Cloudflare Workers, and custom receivers.</p>
 
 <h3>Discord</h3>
 <p>Copy the webhook URL from Discord's channel integration settings and paste it into Fling:</p>
@@ -89,13 +89,15 @@
 
 <pre class="code-block"><code>https://your-domain.example/fling-webhook?token=YOUR_SECRET_TOKEN&amp;slug=personal_notes</code></pre>
 
-<p>Treat the full link as a secret. Fling removes <code>token</code>, <code>slug</code>, and <code>project_slug</code> before saving the endpoint URL, stores the token in the iOS Keychain, and keeps any other query parameters your endpoint needs.</p>
+<p>Treat the full link as a secret. Fling removes <code>token</code>, <code>slug</code>, <code>project_slug</code>, and common secret-like query parameters before saving the endpoint URL, stores the token in the iOS Keychain, and keeps non-secret query parameters your endpoint needs.</p>
 
 <ul>
 <li>Remote servers must use HTTPS.</li>
 <li>Local development endpoints can use localhost, 127.0.0.1, or .local local-network hosts.</li>
+<li>Direct LAN IP address links are refused to avoid accidental local-network probing; use localhost, 127.0.0.1, or a .local hostname for local testing.</li>
+<li>URLs with embedded usernames, passwords, or fragments are refused so secrets do not get saved in app settings.</li>
 <li>Fling verifies with a HEAD request using <code>Authorization: Bearer YOUR_SECRET_TOKEN</code> and <code>X-Fling-Project: personal_notes</code>.</li>
-<li>A 2xx response passes. A 405 response also passes, because many simple servers only implement POST.</li>
+<li>A 2xx response passes. Any other response is refused so Fling does not save an unverified connection.</li>
 </ul>
 
 <p>When you swipe a note to a webhook, Fling sends JSON:</p>

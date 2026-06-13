@@ -50,7 +50,7 @@
 </div>
 <div class="qa">
 <h4>How do I use webhook delivery?</h4>
-<p>Open Settings, tap Connect Webhook, and paste a Fling connection link. Fling previews the destination and verifies the link before saving it.</p>
+<p>Open Settings, tap Connect Webhook, then paste a Discord webhook URL or a Fling connection link from your automation tool. Fling previews the destination and verifies the link before saving it.</p>
 </div>
 </div>
 </div>
@@ -59,6 +59,32 @@
 <details id="webhooks" open>
 <summary><h2>Webhooks</h2></summary>
 <div class="details-body">
+<p>Fling supports two setup styles: paste a Discord webhook URL directly, or use a Fling connection link for Make, Zapier, n8n, Cloudflare Workers, and custom receivers.</p>
+
+<h3>Discord</h3>
+<p>Copy the webhook URL from Discord's channel integration settings and paste it into Fling:</p>
+
+<pre class="code-block"><code>https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN</code></pre>
+
+<p>Treat the full Discord URL as a secret. Fling stores the Discord token in the iOS Keychain and saves only the non-secret endpoint base in app settings.</p>
+
+<ul>
+<li>Fling only accepts Discord webhook URLs from <code>discord.com</code> or <code>discordapp.com</code>.</li>
+<li>Fling verifies Discord webhooks with a non-posting GET request.</li>
+<li>Fling sends Discord messages with mentions disabled, so note text cannot accidentally notify <code>@everyone</code>, roles, or users.</li>
+<li>Discord message content is limited to 2000 characters. Longer notes fall back to the Files app instead of being silently truncated.</li>
+</ul>
+
+<p>Discord receives:</p>
+
+<pre class="code-block"><code>{
+  "content": "Your note text",
+  "allowed_mentions": {
+    "parse": []
+  }
+}</code></pre>
+
+<h3>Custom automations</h3>
 <p>Use a Fling connection link with a secret token and a short destination name.</p>
 
 <pre class="code-block"><code>https://your-domain.example/fling-webhook?token=YOUR_SECRET_TOKEN&amp;slug=personal_notes</code></pre>

@@ -46,7 +46,7 @@
 </div>
 <div class="qa">
 <h4>Do I need an account?</h4>
-<p>No. Fling does not have accounts, ads, analytics, or tracking.</p>
+<p>No. Fling does not have accounts, ads, tracking, or third-party analytics SDKs.</p>
 </div>
 <div class="qa">
 <h4>How do I use webhook delivery?</h4>
@@ -138,13 +138,13 @@ app.post("/fling-webhook", express.json(), (req, res) =&gt; {
 <details id="privacy">
 <summary><h2>Privacy Policy</h2></summary>
 <div class="details-body">
-<p>Last updated: June 12, 2026</p>
+<p>Last updated: June 13, 2026</p>
 
 <p>This privacy policy describes how 47 Summers LLC ("we", "us") handles information in connection with Fling.</p>
 
 <h3>Summary</h3>
 <div class="note-yellow">
-<p>Fling is a quick-capture app for saving notes as plain Markdown files. Fling does not require an account, does not include ads, and does not include analytics or tracking SDKs.</p>
+<p>Fling is a quick-capture app for saving notes as plain Markdown files. Fling does not require an account, does not include ads, and does not track you across apps or websites.</p>
 </div>
 
 <h3>What Fling Stores</h3>
@@ -166,13 +166,17 @@ If you connect a webhook, Fling sends note content to the webhook URL you config
 <h3>Microphone And Speech Recognition</h3>
 <p>Fling asks for microphone and speech recognition permission only if you use voice dictation. Dictation is handled through Apple's system speech-recognition services. Fling does not record, sell, or use your voice for advertising.</p>
 
+<h3>Anonymous Milestone Counts</h3>
+<p>Fling may send a small anonymous milestone event when an install reaches counts such as 10, 100, 500, or 1000 successful Flings. These events help us understand whether people are actually using the app and whether early users should receive future Plus access.</p>
+<p>Milestone events include an app-scoped random install identifier, the milestone number, app version, build number, and timestamp. They do not include note text, filenames, folder names, webhook URLs, Apple ID, email, contacts, location, or device model.</p>
+<p>If a milestone cannot be sent, Fling keeps it on your device and retries later. Milestone events are not used for advertising or tracking across other apps or websites.</p>
+
 <h3>Local Network</h3>
 <p>Fling asks for local network permission only if you connect a local webhook endpoint, such as a development server on your own network.</p>
 
 <h3>What Fling Does Not Do</h3>
 <ul>
 <li>require an account</li>
-<li>collect analytics</li>
 <li>show ads</li>
 <li>track you across apps or websites</li>
 <li>sell personal data</li>

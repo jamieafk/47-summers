@@ -1,0 +1,31 @@
+# Fling milestone receiver — Cloudflare Worker
+# Bound ONLY to /api/fling/* on 47summers.com. Every other path on the domain
+# is served straight from GitHub Pages via Cloudflare DNS — this Worker never runs
+# for the static landing site, so the site stays untouched.
+
+name = "fling-milestones"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# D1 database. Create it once with:  npx wrangler d1 create fling-milestones
+# then paste the printed database_id below.
+[[d1_databases]]
+binding = "DB"
+database_name = "fling-milestones"
+database_id = "REPLACE_WITH_DATABASE_ID"
+
+# Route: intercept only the Fling API path. The app's shipped build POSTs to the
+# apex host (no www), so the apex route is what matters.
+[[routes]]
+pattern = "47summers.com/api/fling/*"
+zone_name = "47summers.com"
+
+[vars]
+# Soft abuse cap: max accepted events per source IP per hour. Legit installs send
+# at most 4 events ever, so this only bites abusers. Set 0 to disable.
+RATE_LIMIT_PER_HOUR = "200"
+
+# Secrets are NOT stored here. Set them with `npx wrangler secret put <NAME>`:
+#   DISCORD_WEBHOOK — Discord webhook URL; milestone alerts are posted here
+#   STATS_KEY       — shared secret required to read /api/fling/stats
+#   IP_SALT         — random string used to hash IPs (so raw IPs are never stored)

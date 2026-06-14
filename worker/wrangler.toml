@@ -12,7 +12,7 @@ compatibility_date = "2025-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "fling-milestones"
-database_id = "REPLACE_WITH_DATABASE_ID"
+database_id = "66715d1e-da3a-47c3-84ef-a5192952d5ac"
 
 # Route: intercept only the Fling API path. The app's shipped build POSTs to the
 # apex host (no www), so the apex route is what matters.

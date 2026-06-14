@@ -70,14 +70,19 @@ export async function handleMilestone(request, env, ctx) {
   // Soft rate limit by IP hash (best-effort; legit installs send <=4 events ever).
   const limit = Number(env.RATE_LIMIT_PER_HOUR || "0")
   if (limit > 0 && ipHash) {
-    const sinceISO = new Date(Date.now() - 3600_000).toISOString()
-    const row = await env.DB.prepare(
-      "SELECT COUNT(*) AS n FROM milestone_events WHERE ip_hash = ? AND received_at > ?"
-    )
-      .bind(ipHash, sinceISO)
-      .first()
-    if (row && Number(row.n) >= limit) {
-      return json({ error: "rate_limited" }, 429)
+    try {
+      const sinceISO = new Date(Date.now() - 3600_000).toISOString()
+      const row = await env.DB.prepare(
+        "SELECT COUNT(*) AS n FROM milestone_events WHERE ip_hash = ? AND received_at > ?"
+      )
+        .bind(ipHash, sinceISO)
+        .first()
+      if (row && Number(row.n) >= limit) {
+        return json({ error: "rate_limited" }, 429)
+      }
+    } catch {
+      // Soft limit: on a transient read error, skip the check and let the event
+      // through rather than deferring a legitimate milestone.
     }
   }
 
@@ -134,16 +139,20 @@ export async function handleStats(request, env) {
   if (!env.STATS_KEY || !timingSafeEqual(key, env.STATS_KEY)) {
     return json({ error: "unauthorized" }, 401)
   }
-  const byMilestone = await env.DB.prepare(
-    "SELECT milestone, COUNT(*) AS events, COUNT(DISTINCT install_id) AS installs FROM milestone_events GROUP BY milestone ORDER BY milestone"
-  ).all()
-  const totalRow = await env.DB.prepare(
-    "SELECT COUNT(DISTINCT install_id) AS installs FROM milestone_events"
-  ).first()
-  return json({
-    milestones: byMilestone?.results ?? [],
-    unique_installs: totalRow ? Number(totalRow.installs) : 0,
-  })
+  try {
+    const byMilestone = await env.DB.prepare(
+      "SELECT milestone, COUNT(*) AS events, COUNT(DISTINCT install_id) AS installs FROM milestone_events GROUP BY milestone ORDER BY milestone"
+    ).all()
+    const totalRow = await env.DB.prepare(
+      "SELECT COUNT(DISTINCT install_id) AS installs FROM milestone_events"
+    ).first()
+    return json({
+      milestones: byMilestone?.results ?? [],
+      unique_installs: totalRow ? Number(totalRow.installs) : 0,
+    })
+  } catch {
+    return json({ error: "database_error" }, 503)
+  }
 }
 
 function intOrNull(v) {

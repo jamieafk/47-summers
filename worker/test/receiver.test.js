@@ -46,17 +46,20 @@ class FakeStmt {
   }
   async first() {
     if (this.sql.includes("WHERE ip_hash = ?")) {
+      if (this.db.throwOnRateLimit) throw new Error("simulated rate-limit read failure")
       const [ipHash, sinceISO] = this.args
       const n = this.db.events.filter((e) => e.ip_hash === ipHash && e.received_at > sinceISO).length
       return { n }
     }
     if (this.sql.includes("COUNT(DISTINCT install_id) AS installs") && !this.sql.includes("GROUP BY")) {
+      if (this.db.throwOnStats) throw new Error("simulated stats read failure")
       return { installs: new Set(this.db.events.map((e) => e.install_id)).size }
     }
     return null
   }
   async all() {
     if (this.sql.includes("GROUP BY milestone")) {
+      if (this.db.throwOnStats) throw new Error("simulated stats read failure")
       const map = new Map()
       for (const e of this.db.events) {
         const m = map.get(e.milestone) || { milestone: e.milestone, events: 0, installs: new Set() }
@@ -230,6 +233,14 @@ test("rate limit: over the per-IP cap → 429", async () => {
   assert.equal(env.DB.events.length, 2)
 })
 
+test("rate-limit read error: soft-skips and still stores the event (200)", async () => {
+  const env = makeEnv({ RATE_LIMIT_PER_HOUR: "200" })
+  env.DB.throwOnRateLimit = true
+  const res = await handleMilestone(milestoneRequest(validEvent()), env)
+  assert.equal(res.status, 200)
+  assert.equal(env.DB.events.length, 1) // event landed despite the rate-limit read failing
+})
+
 // --- Stats -------------------------------------------------------------------
 test("stats requires the secret key", async () => {
   const env = makeEnv()
@@ -251,4 +262,11 @@ test("stats returns per-milestone counts and unique installs", async () => {
   assert.equal(ten.installs, 2)
   const hundred = data.milestones.find((m) => m.milestone === 100)
   assert.equal(hundred.events, 1)
+})
+
+test("stats DB error returns 503 instead of crashing", async () => {
+  const env = makeEnv()
+  env.DB.throwOnStats = true
+  const res = await handleStats(new Request("https://47summers.com/api/fling/stats?key=s3cret"), env)
+  assert.equal(res.status, 503)
 })

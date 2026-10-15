@@ -59,79 +59,98 @@
 <details id="webhooks" open>
 <summary><h2>Webhooks</h2></summary>
 <div class="details-body">
-<p>Fling supports two setup styles: paste a Discord webhook URL directly, or use a Fling connection link for automation bridges, Cloudflare Workers, and custom receivers.</p>
+<p>Fling posts one HTTP request per note to each webhook destination. This is the contract a receiver can rely on (schema 2.0, Fling 1.2). Paste any HTTPS URL, a Discord or Slack webhook, or a legacy connection link; pick how it's secured and what your server receives; then Fling sends a real test request and lets you save once your server answers 2xx.</p>
+
+<h3>Request</h3>
+<p><code>POST &lt;your URL&gt;</code> over HTTPS (plain http only for <code>localhost</code>, <code>127.0.0.1</code>, <code>::1</code> and <code>*.local</code>). IP-literal hosts and URLs with credentials are refused; redirects are not followed.</p>
+<p>Headers on every request:</p>
+<pre class="code-block"><code>Content-Type: &lt;per body format, below&gt;
+User-Agent: Fling/&lt;app version&gt; (ios|macos)
+X-Fling-Event: note | test
+X-Fling-Schema: 2.0
+X-Fling-Delivery: &lt;uuid&gt;          same value on the retry = idempotency key</code></pre>
+<p>Authentication, one of (chosen in the app):</p>
+<pre class="code-block"><code>Authorization: Bearer &lt;token&gt;                       bearer token (also legacy connection links)
+&lt;Your-Header&gt;: &lt;value&gt;                              custom header, e.g. X-API-Key
+X-Fling-Timestamp: &lt;unix seconds&gt;                   signing secret
+X-Fling-Signature: v1=&lt;hex HMAC-SHA256(secret, &quot;&lt;timestamp&gt;.&lt;raw body bytes&gt;&quot;)&gt;</code></pre>
+<p>Legacy connection links (<code>…?token=…&amp;slug=…</code>) also send <code>X-Fling-Project: &lt;slug&gt;</code> and <code>project_slug</code> in the body. Extra headers configured in the app are sent as given; they may not shadow <code>Authorization</code>, <code>Content-Type</code>, <code>Content-Length</code>, <code>Host</code>, <code>User-Agent</code> or <code>X-Fling-*</code>.</p>
+
+<h3>Response</h3>
+<p>Any <code>2xx</code> means "stored". Fling retries <strong>once</strong> after a timeout, a connection error or a <code>5xx</code>, about 1.5 s later, with the same <code>X-Fling-Delivery</code>; a <code>4xx</code> is final. The retry is a fresh request (a new signature timestamp).</p>
+<p><code>X-Fling-Event: test</code> is the setup check: a real request with a fixed sample note. Answer <code>2xx</code> and store nothing.</p>
+
+<h3>Body formats</h3>
+<p><strong>JSON</strong> (<code>application/json</code>), the default:</p>
+<pre class="code-block"><code>{
+  &quot;schema_version&quot;: &quot;2.0&quot;,
+  &quot;event&quot;: &quot;note&quot;,
+  &quot;id&quot;: &quot;11111111-2222-3333-4444-555555555555&quot;,
+  &quot;created_at&quot;: &quot;2026-10-15T08:15:30Z&quot;,
+  &quot;timezone&quot;: &quot;Asia/Singapore&quot;,
+  &quot;title&quot;: &quot;Pitch idea&quot;,
+  &quot;text&quot;: &quot;Pitch idea\n\nA focus timer that only counts the minutes you actually focus&quot;,
+  &quot;description&quot;: &quot;A focus timer that only counts the minutes you actually focus&quot;,
+  &quot;format&quot;: &quot;markdown&quot;,
+  &quot;input_method&quot;: &quot;typed&quot;,
+  &quot;source&quot;: { &quot;platform&quot;: &quot;macos&quot;, &quot;app_version&quot;: &quot;1.2&quot; },
+  &quot;folder&quot;: &quot;ideas&quot;,
+  &quot;project_slug&quot;: &quot;personal_notes&quot;,
+  &quot;attachments&quot;: [ { &quot;name&quot;: &quot;note-1.png&quot;, &quot;type&quot;: &quot;image/png&quot;, &quot;size&quot;: 48213, &quot;part&quot;: &quot;files[0]&quot; } ]
+}</code></pre>
+<ul>
+<li><code>description</code> is omitted for one-line notes; <code>folder</code> only when the note was filed into a sub-folder; <code>project_slug</code> only for legacy connection links; <code>attachments</code> only with images.</li>
+<li><code>input_method</code> is <code>typed</code>, <code>voice</code> or <code>mixed</code>.</li>
+<li>Every schema 1.x field is still present with the same meaning; 2.0 adds <code>event</code>, <code>source</code>, <code>folder</code>, <code>attachments</code>.</li>
+<li><strong>Images</strong> ("Include images" on): the request becomes <code>multipart/form-data</code> with a <code>payload_json</code> part (the JSON above) followed by <code>files[0]</code>, <code>files[1]</code>… parts carrying the image bytes (<code>image/png</code>, <code>image/jpeg</code>, <code>image/gif</code>). Templates, form and Markdown bodies never carry images.</li>
+</ul>
+<p><strong>Markdown</strong> (<code>text/markdown; charset=utf-8</code>): the note text, nothing else. The first line is the title.</p>
+<p><strong>Form</strong> (<code>application/x-www-form-urlencoded; charset=utf-8</code>): fields <code>schema_version</code>, <code>event</code>, <code>id</code>, <code>created_at</code>, <code>timezone</code>, <code>title</code>, <code>text</code>, <code>format</code>, <code>input_method</code>, <code>platform</code>, <code>app_version</code>, plus <code>description</code>, <code>folder</code>, <code>project_slug</code> when present.</p>
+<p><strong>Template</strong> (<code>application/json</code> when the template starts with <code>{</code> or <code>[</code>, else <code>text/plain</code>): your template with placeholders replaced: <code>{{title}}</code> <code>{{text}}</code> <code>{{description}}</code> <code>{{created_at}}</code> <code>{{id}}</code> <code>{{timezone}}</code> <code>{{input_method}}</code> <code>{{platform}}</code> <code>{{folder}}</code> <code>{{event}}</code>. In a JSON template the values are JSON-string-escaped. Slack preset: <code>{"text": "{{text}}"}</code>.</p>
 
 <h3>Discord</h3>
-<p>Copy the webhook URL from Discord's channel integration settings and paste it into Fling:</p>
+<p>Paste the channel's webhook URL. Fling keeps the token in the Keychain, verifies with a quiet GET, posts with mentions disabled, and sends images as attachments (8 MiB, 10 files). Notes over 2000 characters fall back to the Files app instead of being truncated.</p>
 
-<pre class="code-block"><code>https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN</code></pre>
-
-<p>Treat the full Discord URL as a secret. Fling stores the Discord token in the iOS Keychain and saves only the non-secret endpoint base in app settings.</p>
-
-<ul>
-<li>Fling only accepts Discord webhook URLs from <code>discord.com</code> or <code>discordapp.com</code>.</li>
-<li>Fling verifies Discord webhooks with a non-posting GET request.</li>
-<li>Fling sends Discord messages with mentions disabled, so note text cannot accidentally notify <code>@everyone</code>, roles, or users.</li>
-<li>Discord message content is limited to 2000 characters. Longer notes fall back to the Files app instead of being silently truncated.</li>
-</ul>
-
-<p>Discord receives:</p>
-
-<pre class="code-block"><code>{
-  "content": "Your note text",
-  "allowed_mentions": {
-    "parse": []
-  }
-}</code></pre>
-
-<h3>Custom automations</h3>
-<p>Use a Fling connection link with a secret token and a short destination name.</p>
-
-<pre class="code-block"><code>https://your-domain.example/fling-webhook?token=YOUR_SECRET_TOKEN&amp;slug=personal_notes</code></pre>
-
-<p>Treat the full link as a secret. Fling removes <code>token</code>, <code>slug</code>, <code>project_slug</code>, and common secret-like query parameters before saving the endpoint URL, stores the token in the iOS Keychain, and keeps non-secret query parameters your endpoint needs.</p>
-
-<ul>
-<li>Remote servers must use HTTPS.</li>
-<li>Local development endpoints can use localhost, 127.0.0.1, or .local local-network hosts.</li>
-<li>Direct LAN IP address links are refused to avoid accidental local-network probing; use localhost, 127.0.0.1, or a .local hostname for local testing.</li>
-<li>URLs with embedded usernames, passwords, or fragments are refused so secrets do not get saved in app settings.</li>
-<li>Fling verifies with a HEAD request using <code>Authorization: Bearer YOUR_SECRET_TOKEN</code> and <code>X-Fling-Project: personal_notes</code>.</li>
-<li>A 2xx response passes. Any other response is refused so Fling does not save an unverified connection.</li>
-</ul>
-
-<p>When you swipe a note to a webhook, Fling sends JSON:</p>
-
-<pre class="code-block"><code>{
-  "schema_version": "1.1",
-  "project_slug": "personal_notes",
-  "id": "11111111-2222-3333-4444-555555555555",
-  "created_at": "2026-06-12T08:15:30Z",
-  "timezone": "America/New_York",
-  "title": "First line of the note",
-  "description": "Everything after the first line",
-  "text": "First line of the note\nEverything after the first line",
-  "format": "markdown",
-  "input_method": "typed"
-}</code></pre>
-
-<p>For a one-line note, <code>description</code> is omitted. <code>input_method</code> is <code>typed</code>, <code>voice</code>, or <code>mixed</code> for the current capture session. Restored older drafts default to <code>typed</code> because draft files do not store input provenance. If a webhook send fails, Fling saves the note to the Files app fallback.</p>
-
-<pre class="code-block"><code>app.head("/fling-webhook", (req, res) =&gt; {
-  if (req.get("authorization") !== `Bearer ${process.env.FLING_TOKEN}`) {
-    return res.sendStatus(401);
-  }
-  res.sendStatus(204);
-});
-
-app.post("/fling-webhook", express.json(), (req, res) =&gt; {
-  if (req.get("authorization") !== `Bearer ${process.env.FLING_TOKEN}`) {
-    return res.sendStatus(401);
-  }
-
-  console.log(req.body.project_slug, req.body.input_method, req.body.title);
+<h3>Verifying a signature</h3>
+<p>Node (Express with <code>express.raw({ type: '*/*' })</code> so <code>req.body</code> is the raw bytes):</p>
+<pre class="code-block"><code>const crypto = require(&quot;crypto&quot;);
+app.post(&quot;/fling&quot;, (req, res) =&gt; {
+  const ts = req.get(&quot;x-fling-timestamp&quot;);
+  const sig = (req.get(&quot;x-fling-signature&quot;) || &quot;&quot;).replace(/^v1=/, &quot;&quot;);
+  const expected = crypto.createHmac(&quot;sha256&quot;, process.env.FLING_SECRET)
+    .update(`${ts}.`).update(req.body).digest(&quot;hex&quot;);
+  const fresh = Math.abs(Date.now() / 1000 - Number(ts)) &lt; 300;
+  const ok = fresh &amp;&amp; sig.length === expected.length &amp;&amp;
+    crypto.timingSafeEqual(Buffer.from(sig, &quot;hex&quot;), Buffer.from(expected, &quot;hex&quot;));
+  if (!ok) return res.sendStatus(401);
+  if (req.get(&quot;x-fling-event&quot;) === &quot;test&quot;) return res.sendStatus(204);
+  const note = JSON.parse(req.body);
+  // store note …
   res.sendStatus(204);
 });</code></pre>
+<p>Python (FastAPI):</p>
+<pre class="code-block"><code>import hmac, hashlib, os, time
+from fastapi import FastAPI, Request, Response
+
+app = FastAPI()
+
+@app.post(&quot;/fling&quot;)
+async def fling(request: Request):
+    body = await request.body()
+    ts = request.headers.get(&quot;x-fling-timestamp&quot;, &quot;0&quot;)
+    sig = request.headers.get(&quot;x-fling-signature&quot;, &quot;&quot;).removeprefix(&quot;v1=&quot;)
+    expected = hmac.new(os.environ[&quot;FLING_SECRET&quot;].encode(), f&quot;{ts}.&quot;.encode() + body, hashlib.sha256).hexdigest()
+    if abs(time.time() - int(ts)) &gt; 300 or not hmac.compare_digest(sig, expected):
+        return Response(status_code=401)
+    if request.headers.get(&quot;x-fling-event&quot;) == &quot;test&quot;:
+        return Response(status_code=204)
+    note = await request.json()
+    # store note …
+    return Response(status_code=204)</code></pre>
+<p>Cloudflare Worker: read <code>await request.text()</code> for the body, compute the HMAC with <code>crypto.subtle</code> (<code>HMAC</code>, <code>SHA-256</code>), compare hex.</p>
+
+<h3>Reproducing a request</h3>
+<p>The setup sheet's <strong>Copy as curl</strong> gives the exact request with secrets as <code>$FLING_*</code> variables; <strong>Copy setup prompt for your AI</strong> gives a brief an assistant can build a receiver from. Settings keeps the last ten deliveries per webhook (time, status, latency, the first 200 characters of the response); headers and bodies are never stored.</p>
 </div>
 </details>
 

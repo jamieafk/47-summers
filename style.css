@@ -13,24 +13,44 @@ body {
   background: #fff;
   color: #000;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  line-height: 1.5;
-  font-size: clamp(1rem, 0.9rem + 0.4vw, 1.2rem);
+  /* Monospace needs more leading than proportional type to stay readable */
+  line-height: 1.65;
+  font-size: clamp(1rem, 0.9rem + 0.4vw, 1.15rem);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Wrap long words rather than overflow the viewport on narrow screens */
-p, li, h1, h2, h3, .lead, summary { overflow-wrap: anywhere; }
+p, li, h1, h2, h3, h4, .lead, summary { overflow-wrap: break-word; }
+p, li { overflow-wrap: anywhere; }
+
+/* Comfortable measure: in monospace 1ch is exactly one character */
+p, li, h4 { max-width: 68ch; }
 
 .wrap {
   max-width: 72rem;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 0.75rem;
 }
 @media (min-width: 48rem) {
   .wrap { padding: 2rem; }
 }
 
 a { color: inherit; }
+p a, li a {
+  text-decoration-thickness: 0.1em;
+  text-underline-offset: 0.2em;
+}
+
+b, strong { font-weight: 800; }
+
+/* Inline code reads as a token, not more body text */
+:not(pre) > code {
+  font-family: inherit;
+  font-size: 0.9em;
+  background: color-mix(in srgb, currentColor 9%, transparent);
+  padding: 0.05em 0.3em;
+}
 
 /* ---- Headings: heavy sans, uppercase ---- */
 h1, h2, h3, .badge {
@@ -41,16 +61,17 @@ h1, h2, h3, .badge {
   line-height: 0.95;
   margin: 0;
 }
-h1 { font-size: clamp(2.75rem, 7vw + 1rem, 6rem); }
-h2 { font-size: clamp(2.25rem, 6vw + 1rem, 4.5rem); }
-h3 { font-size: clamp(1.75rem, 4vw + 1rem, 3.75rem); }
+/* Phone minimums sized so the longest single word ("GRANDPARENTS") fits unbroken */
+h1 { font-size: clamp(2rem, 7vw + 0.5rem, 6rem); }
+h2 { font-size: clamp(2rem, 5vw + 1rem, 4.5rem); }
+h3 { font-size: clamp(1.6rem, 3.5vw + 1rem, 3.75rem); }
 
 /* ---- Core box primitive ---- */
 .box {
   border: 8px solid #000;
   background: #fff;
   color: #000;
-  padding: 1.25rem;
+  padding: 1.125rem 1rem;
 }
 @media (min-width: 48rem) {
   .box { padding: 2rem; }
@@ -116,7 +137,7 @@ h3 { font-size: clamp(1.75rem, 4vw + 1rem, 3.75rem); }
   border: 8px solid #000;
   background: #fff;
   color: #000;
-  padding: 1.25rem;
+  padding: 1.125rem 1rem;
   text-decoration: none;
   transition: background 0.1s, color 0.1s;
 }
@@ -135,6 +156,7 @@ h3 { font-size: clamp(1.75rem, 4vw + 1rem, 3.75rem); }
 }
 .card-head h3 { min-width: 0; }
 .card p { margin: 0; }
+.box > p:last-child { margin-bottom: 0; }
 
 /* Hover / keyboard-focus invert — links only */
 a.card:hover,
@@ -166,14 +188,21 @@ a.card:focus-visible .badge { background: #fff; color: #000; }
 .note-yellow {
   border: 4px solid #000;
   background: #fde047;
-  padding: 1.5rem;
+  padding: 1rem;
+  margin: 1.5rem 0;
 }
+@media (min-width: 48rem) {
+  .note-yellow { padding: 1.5rem; }
+}
+.note-yellow > :last-child { margin-bottom: 0; }
 .note-invert {
   border: 4px solid #000;
   background: #000;
   color: #fff;
-  padding: 1rem 1.25rem;
+  padding: 1rem;
+  margin: 1.5rem 0;
 }
+.note-invert > :last-child { margin-bottom: 0; }
 
 /* ---- Back link button ---- */
 .backlink {
@@ -226,7 +255,7 @@ summary:focus-visible { background: #fff; color: #000; outline: none; }
   border: 8px solid #000;
   border-top: 0;
   background: #fff;
-  padding: 1.25rem;
+  padding: 1.25rem 1rem;
 }
 @media (min-width: 48rem) {
   .details-body { padding: 2rem; }
@@ -236,18 +265,20 @@ summary:focus-visible { background: #fff; color: #000; outline: none; }
 .details-body h3 {
   font-size: clamp(1.5rem, 2vw + 1rem, 2rem);
   border-bottom: 4px solid #000;
+  line-height: 1.05;
   padding-bottom: 0.5rem;
-  margin: 2rem 0 1rem;
+  margin: 2.5rem 0 1rem;
 }
 .details-body h3:first-child { margin-top: 0; }
 .details-body h4 {
   font-family: Arial, Helvetica, sans-serif;
   font-weight: 900;
   text-transform: uppercase;
-  font-size: 1.15rem;
-  margin: 1.5rem 0 0.5rem;
+  font-size: 1.1rem;
+  line-height: 1.2;
+  margin: 1.75rem 0 0.5rem;
 }
-.details-body p { margin: 0 0 1rem; }
+.details-body p { margin: 0 0 1.1rem; }
 /* Lists read the same inside a collapsible and inside a plain box; numbered
    steps use the same indent as bullets so a how-to does not shift left. */
 .details-body ul,
@@ -255,16 +286,24 @@ summary:focus-visible { background: #fff; color: #000; outline: none; }
 .box ul,
 .box ol { margin: 0 0 1rem; padding-left: 1.25rem; }
 .details-body li,
-.box li { margin-bottom: 0.5rem; }
-.qa { border-left: 4px solid #000; padding-left: 1rem; margin-bottom: 1.25rem; }
+.box li { margin-bottom: 0.6rem; }
+.details-body li::marker,
+.box li::marker { font-weight: 800; }
+/* Q&A pairs separated by a full-width rule, question set tight to its answer */
+.qa { padding: 1rem 0; }
+.qa + .qa { border-top: 2px solid #000; }
+.qa:last-child { padding-bottom: 0; }
+.qa h4 { margin-top: 0; }
+.qa p:last-child { margin-bottom: 0; }
 .code-block {
   border: 4px solid #000;
   background: #000;
   color: #fff;
-  font-size: 0.85rem;
-  line-height: 1.45;
+  font-size: 0.85em;
+  line-height: 1.55;
   overflow-x: auto;
   padding: 1rem;
+  margin: 0 0 1.25rem;
   white-space: pre;
 }
 .code-block code { font-family: inherit; }

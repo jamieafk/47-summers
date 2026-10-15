@@ -21,9 +21,9 @@ Landing page for 47 Summers LLC. GitHub Pages at `47summers.com` (CNAME).
 ## Design language (brutalist)
 
 - 8px black borders; black/white/yellow (`#fde047`)
-- Uppercase Arial-900 headings, monospace body. Privacy-policy *body* stays sentence-case
+- Uppercase Arial-900 headings; body in the system UI font (San Francisco/Segoe), not monospace: mono paragraphs were judged hard to read (2026-10-15). Mono only for code, ASCII art and footer. Privacy-policy *body* stays sentence-case
 - Hover/focus-invert cards; ASCII art in inverted black boxes
-- Readability: prose capped at 68ch with 1.65 leading; inline `<code>` gets a tinted chip; Q&A pairs split by a full-width rule (no side-stripe borders)
+- Readability: prose capped at 62ch with 1.6 leading; in-box `h3` subheads are small and ruled, not section-sized; inline `<code>` gets a tinted chip; Q&A pairs split by a full-width rule (no side-stripe borders)
 - ASCII headers: figlet **"ANSI Shadow"** (`figlet -d /tmp -f "ANSI Shadow" "NAME"`; font at `/tmp/ANSI Shadow.flf`, from github.com/xero/figlet-fonts)
 - Responsive: box padding tightens under 48rem; `.ascii` scales via `clamp()` so the widest banner fits on phones
 
